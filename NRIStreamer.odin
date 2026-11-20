@@ -39,7 +39,7 @@ StreamerDesc :: struct {
 
 	// Dynamically (re)allocated ring-buffer for copying and rendering
 	dynamicBufferMemoryLocation: MemoryLocation, // UPLOAD or DEVICE_UPLOAD
-	dynamicBufferDesc:           BufferDesc,     // "size" is ignored
+	dynamicBufferDesc:           BufferDesc,     // "size" is the initial per-frame size (0 - allocate on demand), the buffer still grows if a frame streams more
 	queuedFrameNum:              u32,            // number of frames "in-flight" (usually 1-3), adds 1 under the hood for the current "not-yet-committed" frame
 
 	// Statically allocated read/write ring-buffer for generic CPU data

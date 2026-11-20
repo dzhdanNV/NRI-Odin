@@ -59,7 +59,7 @@ AllocationCallbacks :: struct {
 
 CallbackInterface :: struct {
 	MessageCallback: proc "c" (messageType: Message, file: cstring, line: u32, message: cstring, userArg: rawptr),
-	AbortExecution:  proc "c" (userArg: rawptr), // break on "Message::ERROR" if provided
+	AbortExecution:  proc "c" (userArg: rawptr), // called when reporting a positive "Result"
 	userArg:         rawptr,
 }
 
@@ -80,7 +80,7 @@ VKExtensions :: struct {
 
 // A collection of queues of the same type
 QueueFamilyDesc :: struct {
-	queuePriorities: [^]f32, // [-1; 1]: low < 0, normal = 0, high > 0 ("queueNum" entries expected)
+	queuePriorities: [^]f32, // "queueNum" entries in range [-1; 1] (low < 0, normal = 0, high > 0, D3D12: low == normal)
 	queueNum:        u32,
 	queueType:       QueueType,
 }
@@ -102,20 +102,30 @@ DeviceCreationDesc :: struct {
 	d3dShaderExtRegister: u32, // vendor specific shader extensions (default is "NRI_SHADER_EXT_REGISTER", space is always "0")
 	d3dZeroBufferSize:    u32, // no "memset" functionality in D3D, "CmdZeroBuffer" implemented via a bunch of copies (4 Mb by default)
 
+	// Directory holding "D3D12Core.dll" of the Agility SDK NRI was built against:
+	// - useful for hosts that cannot export "D3D12SDKVersion" / "D3D12SDKPath" (managed runtimes, plugins)
+	// - process-global: NULL keeps the current SDK selection, including a previously supplied custom path
+	// - existing global configuration is preserved; switching to a different runtime fails while incompatible devices remain alive
+	// - may be silently ignored if not supported
+	d3d12AgilitySdkPath: cstring,
+
 	// Vulkan specific
-	vkBindingOffsets: VKBindingOffsets,
-	vkExtensions:     VKExtensions, // to enable
+	vkBindingOffsets:         VKBindingOffsets,
+	vkExtensions:             VKExtensions, // to enable
+	vkInstanceCreateInfoNext: rawptr,       // appended to "VkInstanceCreateInfo::pNext" after NRI's "VkDebugUtilsMessengerCreateInfoEXT" and "VkValidationFeaturesEXT" (i.e. "VkLayerSettingsCreateInfoEXT")
 
 	// Switches (disabled by default)
 	enableNRIValidation:               bool, // embedded validation layer, checks for NRI specifics
 	enableGraphicsAPIValidation:       bool, // GAPI-provided validation layer (D3D12: process-global; METAL: ignored, set "MTL_DEBUG_LAYER=1" instead)
 	enableD3D11CommandBufferEmulation: bool, // enable? but why? (auto-enabled if deferred contexts are not supported)
 	enableD3D12RayTracingValidation:   bool, // slow but useful, can only be enabled if envvar "NV_ALLOW_RAYTRACING_VALIDATION" is set to "1"
+	enableD3D12GpuBasedValidation:     bool, // D3D12: "ID3D12Debug1::SetEnableGPUBasedValidation" (slow, process-global, requires "enableGraphicsAPIValidation")
 	enableMemoryZeroInitialization:    bool, // page-clears are fast, but memory is not cleared by default in VK
 
 	// Switches (enabled by default)
 	disableVKRayTracing:          bool, // to save CPU memory in some implementations
 	disableD3D12EnhancedBarriers: bool, // even if AgilitySDK is in use, some apps still use legacy barriers. It can be important for integrations
+	disableD3D12BreakOnError:     bool, // D3D12: don't "SetBreakOnSeverity" for "ERROR" and "CORRUPTION" (messages still go through "CallbackInterface", if supported)
 }
 
 @(default_calling_convention="c", link_prefix="nri")

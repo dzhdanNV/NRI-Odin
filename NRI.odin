@@ -61,8 +61,8 @@ when ODIN_OS == .Windows {
 	// } else do #panic("Unsupported architecture")
 } else do #panic("Unsupported OS")
 
-NRI_VERSION      :: 191
-NRI_VERSION_DATE :: "28 October 2026"
+NRI_VERSION      :: 192
+NRI_VERSION_DATE :: "12 November 2026"
 
 // Threadsafe: yes
 CoreInterface :: struct {
@@ -215,7 +215,7 @@ CoreInterface :: struct {
 	CmdCopyTexture:             proc "c" (commandBuffer: ^CommandBuffer, dstTexture: ^Texture, dstRegion: ^TextureRegionDesc, srcTexture: ^Texture, srcRegion: ^TextureRegionDesc), // METAL: a single-plane depth-stencil copy requires identical non-multisampled formats
 	CmdUploadBufferToTexture:   proc "c" (commandBuffer: ^CommandBuffer, dstTexture: ^Texture, dstRegion: ^TextureRegionDesc, srcBuffer: ^Buffer, srcDataLayout: ^TextureDataLayoutDesc),
 	CmdReadbackTextureToBuffer: proc "c" (commandBuffer: ^CommandBuffer, dstBuffer: ^Buffer, dstDataLayout: ^TextureDataLayoutDesc, srcTexture: ^Texture, srcRegion: ^TextureRegionDesc),
-	CmdZeroBuffer:              proc "c" (commandBuffer: ^CommandBuffer, buffer: ^Buffer, offset: u64, size: u64),
+	CmdZeroBuffer:              proc "c" (commandBuffer: ^CommandBuffer, buffer: ^Buffer, offset: u64, size: u64), // offset and size must be multiples of 4
 
 	// Resolve (outside of rendering). METAL: color only, use "RenderingDesc::depth.resolveDst" for depth
 	CmdResolveTexture: proc "c" (commandBuffer: ^CommandBuffer, dstTexture: ^Texture, dstRegion: ^TextureRegionDesc, srcTexture: ^Texture, srcRegion: ^TextureRegionDesc, resolveOp: ResolveOp), // "features.regionResolve" is needed for region specification

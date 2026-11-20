@@ -80,6 +80,7 @@ SwapChainBitsEnum :: enum u8 {
 	WAITABLE          = 1,
 	ALLOW_TEARING     = 2,
 	ALLOW_LOW_LATENCY = 3,
+	LATEST_READY      = 4,
 }
 
 SwapChainBits :: bit_set[SwapChainBitsEnum; u8]
@@ -115,6 +116,27 @@ Window :: struct {
 	android: AndroidWindow,
 }
 
+ChromaticityCoords :: struct {
+	x, y: f32, // [0; 1]
+}
+
+// HDR10 static metadata (SMPTE ST.2086 and CTA-861.3), luminance in nits (cd/m2)
+// Luminance must be finite and non-negative; 0 means unknown
+// Known values must satisfy minLuminance <= maxLuminance and MaxFALL <= MaxCLL
+HdrMetadata :: struct {
+	// Mastering display
+	redPrimary:   ChromaticityCoords,
+	greenPrimary: ChromaticityCoords,
+	bluePrimary:  ChromaticityCoords,
+	whitePoint:   ChromaticityCoords,
+	minLuminance: f32,
+	maxLuminance: f32,
+
+	// Content
+	maxContentLightLevel:      f32, // aka "MaxCLL", the brightest pixel
+	maxFrameAverageLightLevel: f32, // aka "MaxFALL", the brightest frame average
+}
+
 // SwapChain textures will be created as "color attachment" resources
 // queuedFrameNum = 0 - auto-selection between 1 (for waitable) or 2 (otherwise)
 // queuedFrameNum = 2 - recommended if the GPU frame time is less than the desired frame time, but the sum of 2 frames is greater
@@ -124,18 +146,15 @@ SwapChainDesc :: struct {
 	width:          Dim_t,
 	height:         Dim_t,
 	textureNum:     u8,              // desired value, real value must be queried using "GetSwapChainTextures"
-	format:         SwapChainFormat, // desired format, real value must be queried using "GetTextureDesc" for one of the swap chain textures
+	format:         SwapChainFormat, // desired format, real value must be queried using "GetTextureDesc" for one of the swap chain textures (VK: "UNSUPPORTED" if the surface has no format in the color space of an HDR format)
 	flags:          SwapChainBits,
 	queuedFrameNum: u8,              // aka "max frame latency", aka "number of frames in flight" (mostly for D3D11)
 
 	// Present scaling and positioning, silently ignored if "features.resizableSwapChain" is not supported or not supported by the implicitly choosen present mode
-	scaling:  Scaling, // VK: if scaling is not supported, "OUT_OF_DATE" error is triggered on resizing
-	gravityX: Gravity,
-	gravityY: Gravity,
-}
-
-ChromaticityCoords :: struct {
-	x, y: f32, // [0; 1]
+	scaling:     Scaling,      // VK: if scaling is not supported, "OUT_OF_DATE" error is triggered on resizing
+	gravityX:    Gravity,
+	gravityY:    Gravity,
+	hdrMetadata: ^HdrMetadata, // VK only: requires "VK_EXT_hdr_metadata"; ignored on Windows and by other backends
 }
 
 // Describes color settings and capabilities of the closest display:

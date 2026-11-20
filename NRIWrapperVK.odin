@@ -39,6 +39,7 @@ QueueFamilyVKDesc :: struct {
 	familyIndex: u32,
 }
 
+// All supported Vulkan 1.0 features must be enabled on "vkDevice"
 DeviceCreationVKDesc :: struct {
 	callbackInterface:   CallbackInterface,
 	allocationCallbacks: AllocationCallbacks,
@@ -55,6 +56,10 @@ DeviceCreationVKDesc :: struct {
 	// Switches (disabled by default)
 	enableNRIValidation:            bool,
 	enableMemoryZeroInitialization: bool, // page-clears are fast, but memory is not cleared by default in VK
+
+	// Treat optional Vulkan 1.1+ features as disabled; Vulkan 1.3 commands require entries in "vkExtensions"
+	// Fences and "ResetQueries" still require "timelineSemaphore" and "hostQueryReset" enabled on "vkDevice"
+	unknownFeatures: bool,
 }
 
 CommandAllocatorVKDesc :: struct {

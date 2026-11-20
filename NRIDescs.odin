@@ -94,6 +94,7 @@ GraphicsAPIEnum :: enum i32 {
 GraphicsAPI :: bit_set[GraphicsAPIEnum; u8]
 
 Result :: enum i8 {
+	EXT_ERROR        = -5,
 	NOT_READY        = -4,
 	DEVICE_LOST      = -3,
 	OUT_OF_DATE      = -2,
@@ -4067,6 +4068,7 @@ ComputePipelineDesc :: struct {
 	flags:          ComputePipelineBits,
 	robustness:     Robustness,
 	cache:          ^PipelineCache, // uses a cached blob on a hit and stores the result on a miss
+	waveLaneNum:    u32,            // VK: requested wave size; 0 = driver choice, ignored if unsupported (D3D12: use "[WaveSize]" in the shader)
 }
 
 // https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_beginning_access_type
@@ -4629,10 +4631,11 @@ DeviceDesc :: struct {
 
 	features: struct {
 		// Swap chain
-		swapChain:          bool, // NRISwapChain
-		presentFromCompute: bool, // see "SwapChainDesc::queue"
-		waitableSwapChain:  bool, // see "SwapChainDesc::waitable"
-		resizableSwapChain: bool, // swap chain can be resized without triggering an "OUT_OF_DATE" error
+		swapChain:            bool, // NRISwapChain
+		presentFromCompute:   bool, // see "SwapChainDesc::queue"
+		waitableSwapChain:    bool, // see "SwapChainDesc::waitable"
+		resizableSwapChain:   bool, // swap chain can be resized without triggering an "OUT_OF_DATE" error
+		latestReadySwapChain: bool, // see "SwapChainBits::LATEST_READY"
 
 		// Multi view
 		flexibleMultiview:      bool, // see "Multiview::FLEXIBLE"
@@ -4703,6 +4706,7 @@ DeviceDesc :: struct {
 		extendedDynamicState:                            bool, // VK: allows to use "VertexBufferDesc::stride" (dynamic) instead of "VertexStreamDesc::stride" (static). Widely supported
 		unifiedTextureLayouts:                           bool, // VK: allows to use "GENERAL" everywhere: https://docs.vulkan.org/refpages/latest/refpages/source/VK_KHR_unified_image_layouts.html
 		resourceAliasing:                                bool, // binding multiple distinct texture or buffer objects to overlap the same underlying memory allocation (unsupported only in D3D11)
+		waveLaneNumControl:                              bool, // see "ComputePipelineDesc::waveLaneNum"
 	},
 
 	shaderFeatures: struct {
